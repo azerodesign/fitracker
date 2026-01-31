@@ -1,0 +1,8 @@
+node_modules
+fitracker-app/node_modules
+fitracker-app/dist
+.env
+fitracker-app/.env
+.vscode
+.DS_Store
+*.log
