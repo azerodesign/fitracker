@@ -27,7 +27,7 @@ const LoginPage = ({ onLoginSuccess, onSwitchToRegister, onBack }) => {
 
     const handleGoogleLogin = async () => {
         const result = await loginWithGoogle();
-        if (result.error) {
+        if (!result.success) {
             setError(result.message);
         }
     };
