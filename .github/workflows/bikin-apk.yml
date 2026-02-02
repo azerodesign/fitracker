@@ -37,8 +37,10 @@ jobs:
       # 4. Add Android Platform & Build APK
       - name: Build APK
         run: |
-          npx cap add android
+          npx cap add android || echo "Android already added"
+          npx cap sync android
           cd android
+          chmod +x gradlew
           ./gradlew assembleDebug
 
       # 5. Upload APK as artifact
