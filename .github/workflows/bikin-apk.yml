@@ -8,6 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fitracker-app
     steps:
       # 1. Checkout code
       - uses: actions/checkout@v3
@@ -41,4 +44,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fitracker-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: fitracker-app/android/app/build/outputs/apk/debug/app-debug.apk
