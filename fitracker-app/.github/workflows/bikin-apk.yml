@@ -1,0 +1,44 @@
+name: Bikin APK Android
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Checkout code
+      - uses: actions/checkout@v3
+
+      # 2. Setup Node.js & Java
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # 3. Install & Build React
+      - name: Install & Build React
+        run: |
+          npm install
+          npm run build
+
+      # 4. Add Android Platform & Build APK
+      - name: Build APK
+        run: |
+          npx cap add android
+          cd android
+          ./gradlew assembleDebug
+
+      # 5. Upload APK as artifact
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fitracker-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk

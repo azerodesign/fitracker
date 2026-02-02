@@ -1,20 +1,23 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "http/server";
+import { createClient } from "supabase";
 
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+serve(async (req: Request) => {
     if (req.method === "OPTIONS") {
         return new Response("ok", { headers: corsHeaders });
     }
 
     try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+        const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+
         const supabaseClient = createClient(
-            Deno.env.get("SUPABASE_URL") ?? "",
-            Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+            supabaseUrl,
+            supabaseAnonKey,
             {
                 global: { headers: { Authorization: req.headers.get("Authorization")! } },
             }
@@ -36,7 +39,6 @@ serve(async (req) => {
         }
 
         // 2. Refresh Token
-        // We always refresh to be safe (or check expiry if stored)
         const refreshRes = await fetch("https://oauth2.googleapis.com/token", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -54,9 +56,7 @@ serve(async (req) => {
         const accessToken = tokenData.access_token;
 
         // 3. Search Gmail
-        // Query: from:no-reply@gojek.com subject:"Bukti Pembayaran" after:YYYY/MM/DD (optional optimization)
-        // For now, simple query
-        const q = 'from:no-reply@gojek.com "Bukti Pembayaran"'; // Adjust if subject varies
+        const q = 'from:no-reply@gojek.com "Bukti Pembayaran"';
         const listRes = await fetch(
             `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=${encodeURIComponent(q)}&maxResults=10`,
             { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -65,7 +65,7 @@ serve(async (req) => {
         const messages = listData.messages || [];
 
         let addedCount = 0;
-        let errors = [];
+        const errors: string[] = [];
 
         // 4. Process Messages
         for (const msg of messages) {
@@ -73,8 +73,6 @@ serve(async (req) => {
             const { data: existing } = await supabaseClient
                 .from("transactions")
                 .select("id")
-                // We need a 'source_id' column in transactions table. 
-                // If not added yet, we need to create it. Assuming it exists as per plan.
                 .eq("source_id", msg.id)
                 .maybeSingle();
 
@@ -88,8 +86,6 @@ serve(async (req) => {
             const detail = await detailRes.json();
 
             // Parse Body
-            // Payload is usually nested. Body data is Base64Web encoded.
-            // We look for 'text/html' part usually
             let bodyData = "";
             if (detail.payload.body.data) {
                 bodyData = detail.payload.body.data;
@@ -98,66 +94,42 @@ serve(async (req) => {
                 if (part && part.body.data) bodyData = part.body.data;
             }
 
-            if (!bodyData) continue; // skip if can't find body
+            if (!bodyData) continue;
 
             // Decode Base64
-            // Helper to fix base64url to base64
             const base64 = bodyData.replace(/-/g, '+').replace(/_/g, '/');
             const htmlContent = atob(base64);
 
-            // EXTRACT DATA (Regex "The Brain")
-            // 1. Amount: "Total Bayar Rp 15.000"
+            // EXTRACT DATA
             const amountMatch = htmlContent.match(/Total Bayar[\s\S]*?Rp\s*([\d.]+)/i);
             const amountRaw = amountMatch ? amountMatch[1].replace(/\./g, "") : "0";
             const amount = parseFloat(amountRaw);
 
-            // 2. Merchant: "Pembayaran kepada <br> ... <br>" or similar
-            // This is tricky and structure dependent.
-            // Fallback: Use Subject or generic "GoPay" if not found.
-            // Try to find "Pembayaran kepada"
             const merchantMatch = htmlContent.match(/Pembayaran kepada[\s\S]*?>([^<]+)</i);
-            let merchant = merchantMatch ? merchantMatch[1].trim() : "GoPay Transaction";
+            const merchant = merchantMatch ? merchantMatch[1].trim() : "GoPay Transaction";
 
-            // 3. Category
-            let category = "Expense"; // Default
-            // Simple keyword matching on the whole HTML
+            // Category
+            let category = "Expense";
             const lowerHtml = htmlContent.toLowerCase();
             if (lowerHtml.includes("gofood") || lowerHtml.includes("food")) category = "Food";
             else if (lowerHtml.includes("goride") || lowerHtml.includes("gocar")) category = "Transport";
-            else if (lowerHtml.includes("top up") || lowerHtml.includes("topup")) {
-                // If Top Up, it might be Transfer or Income?
-                // Typically "Top Up" receipt from GoJek means money entered GoPay.
-                // But if this is an expense tracker, maybe we ignore topups? 
-                // Or mark as Transfer.
-                category = "Transfer";
-            }
+            else if (lowerHtml.includes("top up") || lowerHtml.includes("topup")) category = "Transfer";
 
-            // 4. Date
+            // Date
             const dateHeader = detail.payload.headers.find((h: any) => h.name === "Date");
             const dateStr = dateHeader ? dateHeader.value : new Date().toISOString();
             const dateObj = new Date(dateStr);
-            const dateSql = dateObj.toISOString().split('T')[0]; // YYYY-MM-DD
+            const dateSql = dateObj.toISOString().split('T')[0];
 
             // INSERT
             const { error: insertError } = await supabaseClient.from("transactions").insert({
                 user_id: user.id,
-                type: "Expense", // Assuming expense for now
+                type: "Expense",
                 amount: amount,
-                category: category, // We need to match this to user's category NAMES or IDs? 
-                // If we use text "Food", it works if dashboard handles text categories mismatch or we auto-create?
-                // Dashboard uses 'category' string column, so safe.
+                category: category,
                 date: dateSql,
                 source_id: msg.id,
-                description: merchant // We usually don't have description column in previous tasks...
-                // Wait, looking at Dashboard.jsx formData, we have: type, amount, category, date, wallet_id.
-                // We DON'T have description or merchant.
-                // We should add 'description' or reuse 'category' for merchant?
-                // Let's assume we map Category -> Category.
-                // We should probably allow the user to see the merchant name.
-                // Let's modify Supabase schema to add 'description' or just append to category text?
-                // Or store in metadata?
-                // Let's stick to existing schema: type, amount, category, date, wallet_id.
-                // We need a wallet_id. Use Default Wallet.
+                description: merchant
             });
 
             if (!insertError) {
@@ -171,8 +143,9 @@ serve(async (req) => {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
 
-    } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+        return new Response(JSON.stringify({ error: errorMessage }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
             status: 400,
         });

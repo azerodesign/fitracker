@@ -1,20 +1,23 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "http/server";
+import { createClient } from "supabase";
 
 const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
+serve(async (req: Request) => {
     if (req.method === "OPTIONS") {
         return new Response("ok", { headers: corsHeaders });
     }
 
     try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+        const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+
         const supabaseClient = createClient(
-            Deno.env.get("SUPABASE_URL") ?? "",
-            Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+            supabaseUrl,
+            supabaseAnonKey,
             {
                 global: { headers: { Authorization: req.headers.get("Authorization")! } },
             }
@@ -33,7 +36,6 @@ serve(async (req) => {
         if (!code) throw new Error("No code provided");
 
         // 1. Get Client ID & Secret from DB
-        // We assume the user has already saved them in step 1 of modal
         const { data: integration, error: dbError } = await supabaseClient
             .from("integrations")
             .select("*")
@@ -68,20 +70,16 @@ serve(async (req) => {
         }
 
         // 3. Save Tokens to DB
-        const updates = {
-            refresh_token: tokens.refresh_token, // May be null if not first time? Usually returned if access_type=offline
+        const updates: any = {
             access_token: tokens.access_token,
             token_expires_at: Date.now() + tokens.expires_in * 1000,
             is_active: true,
             last_synced_at: new Date().toISOString()
         };
 
-        // Only update refresh_token if it was returned (Google doesn't always return it on re-auth unless prompt=consent)
-        if (!tokens.refresh_token && !integration.refresh_token) {
-            // Warning: If we don't have a refresh token, we can't sync offline.
-            // The modal uses prompt=consent so we SHOULD get it.
+        if (tokens.refresh_token) {
+            updates.refresh_token = tokens.refresh_token;
         }
-        if (!tokens.refresh_token) delete updates.refresh_token;
 
         const { error: updateError } = await supabaseClient
             .from("integrations")
@@ -95,10 +93,11 @@ serve(async (req) => {
             status: 200,
         });
 
-    } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+        return new Response(JSON.stringify({ error: errorMessage }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 400, // or 500
+            status: 400,
         });
     }
 });
