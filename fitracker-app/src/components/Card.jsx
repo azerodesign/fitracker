@@ -1,19 +1,19 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { COLORS } from '../constants';
 
-const Card = ({ children, title, color = COLORS.white, className = '', headerAction }) => (
+const Card = ({ children, title, className = '', headerAction, noPadding = false }) => (
     <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className={`p-6 border-2 border-[#1D3557] shadow-[6px_6px_0px_0px_#1D3557] ${className}`}
-        style={{ backgroundColor: color }}
+        transition={{ duration: 0.3 }}
+        className={`bg-surface rounded-3xl shadow-soft ${noPadding ? '' : 'p-8'} ${className}`}
     >
-        <div className="flex justify-between items-start mb-4">
-            {title && <h3 className="text-xl font-black uppercase tracking-tighter text-[#1D3557]">{title}</h3>}
-            {headerAction}
-        </div>
+        {(title || headerAction) && (
+            <div className={`flex justify-between items-center mb-6 ${noPadding ? 'px-6 pt-6' : ''}`}>
+                {title && <h3 className="text-lg font-bold text-text-main tracking-tight">{title}</h3>}
+                {headerAction}
+            </div>
+        )}
         {children}
     </motion.div>
 );

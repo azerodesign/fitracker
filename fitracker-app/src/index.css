@@ -1,7 +1,9 @@
 @import "tailwindcss";
+@config "../tailwind.config.js";
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* Font Family */
+  font-family: 'Inter', 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -9,9 +11,153 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* --- Color Variables (Light Mode Default) --- */
+
+  /* Primary (Blue) */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
+
+  /* Secondary (Slate) */
+  --color-secondary-50: #F5F7FA;
+  --color-secondary-100: #f1f5f9;
+  --color-secondary-200: #e2e8f0;
+  --color-secondary-300: #cbd5e1;
+  --color-secondary-400: #94a3b8;
+  --color-secondary-500: #64748b;
+  --color-secondary-600: #475569;
+  --color-secondary-700: #334155;
+  --color-secondary-800: #1e293b;
+  --color-secondary-900: #0f172a;
+
+  /* Semantic Variables (Light Mode) */
+  --color-bg-main: #ffffff;
+  --color-bg-card: #f8fafc;
+  --color-text-base: #0f172a;
+  --color-text-muted: #64748b;
+  --color-border-dim: #e2e8f0;
+
+  /* Legacy/Intermediate Mappings */
+  --color-bg-surface: var(--color-bg-card);
+  --color-text-dim: var(--color-text-muted);
+  --color-border-subtle: var(--color-border-dim);
+
+  /* Master Theme Variables (Strict Mapping) */
+  --bg-app: #ffffff;
+  --bg-card: #f8fafc;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+
+  /* Legacy Aliases (to prevent immediate breakage during refactor) */
+  --color-app-bg: var(--color-bg-main);
+  --color-surface: var(--color-bg-surface);
+  --color-surface-hover: #f1f5f9;
+  --color-text-main: var(--color-text-base);
+  --color-text-muted: var(--color-text-dim);
+  --color-border: var(--color-border-subtle);
+
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+}
+
+/* Dark Mode Overrides */
+.dark {
+  color-scheme: dark;
+
+  /* Semantic Variables (Dark Mode - Deep Night) */
+  --color-bg-main: #020617;
+  /* Slate 950 */
+  --color-bg-card: #0f172a;
+  /* Slate 900 */
+  --color-text-base: #f1f5f9;
+  /* Slate 100 */
+  --color-text-muted: #94a3b8;
+  /* Slate 400 */
+  --color-border-dim: #1e293b;
+  /* Slate 800 */
+
+  /* Legacy/Intermediate Mappings */
+  --color-bg-surface: var(--color-bg-card);
+  --color-text-dim: var(--color-text-muted);
+  --color-border-subtle: var(--color-border-dim);
+
+  /* Master Theme Variables (Strict Mapping) */
+  --bg-app: #020617;
+  --bg-card: #0f172a;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+
+  /* Legacy Aliases (Dark Mode) */
+  --color-app-bg: var(--color-bg-main);
+  --color-surface: var(--color-bg-surface);
+  --color-surface-hover: #1e293b;
+  --color-text-main: var(--color-text-base);
+  --color-text-muted: var(--color-text-dim);
+  --color-border: var(--color-border-subtle);
+
+  /* Re-tune Primary for Dark Mode */
+  --color-primary-50: #172554;
+  --color-primary-100: #1e3a8a;
+  --color-primary-200: #1e40af;
+  --color-primary-300: #1d4ed8;
+  --color-primary-400: #2563eb;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #60a5fa;
+  --color-primary-700: #93c5fd;
+  --color-primary-800: #bfdbfe;
+  --color-primary-900: #dbeafe;
+
+  /* Keep Secondary Palette as reference, but Semantic Vars control the theme */
+
+  /* Primary Colors re-tuned for Dark Mode visibility */
+  --color-primary-50: #172554;
+  --color-primary-100: #1e3a8a;
+  --color-primary-200: #1e40af;
+  --color-primary-300: #1d4ed8;
+  --color-primary-400: #2563eb;
+  --color-primary-500: #3b82f6;
+  /* Keep or slightly adjust */
+  --color-primary-600: #60a5fa;
+  /* Lighter on dark bg */
+  --color-primary-700: #93c5fd;
+  --color-primary-800: #bfdbfe;
+  --color-primary-900: #dbeafe;
+
+  /* Surface */
+  --color-surface: #1e293b;
+  /* Card Background (Slate 800) */
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  @apply bg-bg-main text-text-base transition-colors duration-300;
+  /* Soft UI Background */
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-secondary-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-secondary-400;
 }

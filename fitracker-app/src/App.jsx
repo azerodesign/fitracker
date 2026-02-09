@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ThemeProvider } from './context/ThemeContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -51,11 +52,18 @@ export default function FiTrackerPlan() {
     setView('landing');
   };
 
+  const pageTransition = {
+    initial: { opacity: 0, y: 10 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -10 },
+    transition: { duration: 0.2 }
+  };
+
   return (
-    <>
+    <ThemeProvider>
       <AnimatePresence mode="wait">
         {view === 'landing' && (
-          <motion.div key="landing" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.3 }}>
+          <motion.div key="landing" {...pageTransition}>
             <LandingPage
               onLoginClick={() => setView('login')}
               onRegisterClick={() => setView('register')}
@@ -63,7 +71,7 @@ export default function FiTrackerPlan() {
           </motion.div>
         )}
         {view === 'login' && (
-          <motion.div key="login" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+          <motion.div key="login" {...pageTransition}>
             <LoginPage
               onLoginSuccess={handleLoginSuccess}
               onSwitchToRegister={() => setView('register')}
@@ -72,7 +80,7 @@ export default function FiTrackerPlan() {
           </motion.div>
         )}
         {view === 'register' && (
-          <motion.div key="register" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+          <motion.div key="register" {...pageTransition}>
             <RegisterPage
               onRegisterSuccess={() => setView('login')}
               onSwitchToLogin={() => setView('login')}
@@ -81,7 +89,7 @@ export default function FiTrackerPlan() {
           </motion.div>
         )}
         {view === 'app' && (
-          <motion.div key="app" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} transition={{ duration: 0.4 }}>
+          <motion.div key="app" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
             <Dashboard
               onLogout={handleLogout}
               currentUser={currentUser}
@@ -89,6 +97,6 @@ export default function FiTrackerPlan() {
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </ThemeProvider>
   );
 }

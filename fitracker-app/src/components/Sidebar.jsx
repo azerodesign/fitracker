@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import {
     LayoutDashboard,
     PieChart,
@@ -8,14 +7,12 @@ import {
     LogOut,
     User,
     Wallet,
-    Menu,
+    BookOpen,
     X,
     ChevronLeft,
     ChevronRight,
-    Search,
-    BookOpen
+    TrendingUp
 } from 'lucide-react';
-import BauhausButton from './BauhausButton';
 
 const Sidebar = ({
     activeTab,
@@ -28,70 +25,51 @@ const Sidebar = ({
     setIsCollapsed
 }) => {
 
-    // Bauhaus Design Constants
-    const borderColor = "border-black";
-    const borderWidth = "border-4";
-    const shadowStyle = "shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]";
-    const hoverShadow = "hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px]";
-
     const navItems = [
-        { id: 'input', label: 'Input', icon: LayoutDashboard, color: 'bg-[#F9C74F]' }, // Yellow
-        { id: 'stats', label: 'Stats', icon: PieChart, color: 'bg-[#4285F4]' },      // Blue
-        { id: 'budget', label: 'Budget', icon: Layers, color: 'bg-[#E63946]' },      // Red
-        { id: 'wallet', label: 'Wallets', icon: Wallet, color: 'bg-[#34A853]' },     // Green
-        { id: 'settings', label: 'Settings', icon: Settings, color: 'bg-black text-white' }, // Black
-        { id: 'docs', label: 'Docs', icon: BookOpen, color: 'bg-[#FF9100]' },     // Orange
+        { id: 'input', label: 'Dashboard', icon: LayoutDashboard },
+        { id: 'stats', label: 'Analytics', icon: PieChart },
+        { id: 'budget', label: 'Budgets', icon: Layers },
+        { id: 'wallet', label: 'Wallets', icon: Wallet },
+        { id: 'docs', label: 'Guide', icon: BookOpen },
+        { id: 'settings', label: 'Settings', icon: Settings },
     ];
 
     const SidebarContent = ({ mobile = false }) => (
-        <div className={`flex flex-col h-full bg-[#f0f0f0] border-r-4 border-black font-sans selection:bg-[#F9C74F] selection:text-black transition-all duration-300 ${isCollapsed && !mobile ? 'w-20' : 'w-72'}`}>
-            {/* LOGO */}
-            <div className={`p-4 md:p-6 bg-white border-b-4 border-black flex items-center justify-between ${isCollapsed && !mobile ? 'flex-col gap-4' : ''}`}>
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#4285F4] rounded-full border-4 border-black flex items-center justify-center shrink-0">
-                        <div className="w-4 h-4 bg-[#E63946] transform rotate-45"></div>
-                    </div>
+        <div className={`flex flex-col h-full bg-bg-main transition-all duration-300 border-r border-border-subtle ${!mobile ? 'rounded-3xl shadow-soft' : ''} ${isCollapsed && !mobile ? 'w-24' : 'w-72'}`}>
+
+            {/* HEADER / LOGO */}
+            <div className="h-24 flex items-center px-8">
+                <div className="flex items-center gap-4">
+                    <img src="/logo-new.png" alt="Fitracker Logo" className="w-10 h-10 rounded-xl shadow-soft shrink-0" />
                     {(!isCollapsed || mobile) && (
-                        <div>
-                            <h1 className="text-xl md:text-2xl font-black uppercase tracking-tighter italic text-[#38bdf8]">FiTracker</h1>
-                            <p className="text-[10px] font-bold text-gray-500 mt-[-4px] tracking-widest uppercase">BY AZERO</p>
-                        </div>
+                        <h1 className="text-2xl font-bold tracking-tight text-text-base">Fitracker</h1>
                     )}
                 </div>
-                {/* Mobile Close Button */}
+
                 {mobile && (
-                    <button onClick={() => setIsOpen(false)} className="md:hidden border-2 border-black p-1 hover:bg-gray-200">
+                    <button onClick={() => setIsOpen(false)} className="ml-auto p-2 text-text-dim hover:text-text-base">
                         <X size={24} />
-                    </button>
-                )}
-                {/* Desktop Collapse Button */}
-                {!mobile && (
-                    <button
-                        onClick={() => setIsCollapsed(!isCollapsed)}
-                        className={`hidden md:flex items-center justify-center w-8 h-8 bg-white border-2 border-black hover:bg-gray-100 ${isCollapsed ? 'mt-2' : ''}`}
-                    >
-                        {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
                     </button>
                 )}
             </div>
 
-            {/* USER INFO */}
-            <div className={`p-4 md:p-6 border-b-4 border-black bg-white transition-all overflow-hidden`}>
-                <div className={`flex items-center gap-3 ${isCollapsed && !mobile ? 'justify-center' : ''}`}>
-                    <div className="w-10 h-10 md:w-12 md:h-12 bg-[#F9C74F] rounded-none border-4 border-black flex items-center justify-center transform hover:rotate-6 transition-transform shrink-0">
+            {/* USER PROFILE */}
+            <div className="px-6 pb-6">
+                <div className={`flex items-center gap-4 p-3 rounded-2xl bg-bg-surface border border-border-subtle ${isCollapsed && !mobile ? 'justify-center' : ''}`}>
+                    <div className="w-10 h-10 rounded-full bg-bg-main flex items-center justify-center text-primary-500 shadow-sm shrink-0">
                         <User size={20} />
                     </div>
                     {(!isCollapsed || mobile) && (
-                        <div className="min-w-0">
-                            <p className="text-xs uppercase font-bold text-gray-400">Owner Account</p>
-                            <h3 className="text-lg font-black truncate text-[#0f172a]">{currentUser || 'Azero'}</h3>
+                        <div className="min-w-0 overflow-hidden">
+                            <p className="text-sm font-bold text-text-base truncate">{currentUser || 'User'}</p>
+                            <p className="text-xs text-text-dim truncate">Free Plan</p>
                         </div>
                     )}
                 </div>
             </div>
 
             {/* NAVIGATION */}
-            <nav className="flex-1 p-2 md:p-4 space-y-2 md:space-y-4 overflow-y-auto overflow-x-hidden">
+            <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
                 {navItems.map((item) => (
                     <button
                         key={item.id}
@@ -100,36 +78,31 @@ const Sidebar = ({
                             if (mobile) setIsOpen(false);
                         }}
                         className={`
-                            relative w-full flex items-center gap-4 p-3 md:p-4 text-left transition-all
-                            border-4 border-black
+                            relative w-full flex items-center gap-4 p-4 rounded-pill text-sm font-bold transition-all duration-300
                             ${activeTab === item.id
-                                ? `${item.color} ${item.id === 'settings' ? 'text-white' : 'text-black'} ${shadowStyle} translate-x-[-2px] translate-y-[-2px]`
-                                : 'bg-white hover:bg-gray-50'}
+                                ? 'bg-primary-500 text-white shadow-soft-hover translate-x-1'
+                                : 'text-text-dim hover:bg-bg-surface hover:text-text-base'}
                              ${isCollapsed && !mobile ? 'justify-center px-0' : ''}
                         `}
                         title={isCollapsed ? item.label : ''}
                     >
-                        <item.icon size={24} strokeWidth={3} className="shrink-0" />
+                        <item.icon size={22} className={activeTab === item.id ? 'text-white' : 'text-text-dim'} />
                         {(!isCollapsed || mobile) && (
-                            <span className="font-black uppercase tracking-wide truncate">{item.label}</span>
-                        )}
-
-                        {/* Active Indicator (Bauhaus Shape) */}
-                        {activeTab === item.id && (!isCollapsed || mobile) && (
-                            <div className="absolute right-4 w-3 h-3 bg-white border-2 border-black rotate-45"></div>
+                            <span>{item.label}</span>
                         )}
                     </button>
                 ))}
             </nav>
 
-            {/* FOOTER */}
-            <div className="p-4 md:p-6 border-t-4 border-black bg-white">
+            {/* FOOTER / LOGOUT */}
+            <div className="p-6">
                 <button
                     onClick={onLogout}
-                    className={`w-full flex items-center justify-center gap-2 bg-[#1D3557] text-white p-3 md:p-4 border-4 border-black font-black uppercase ${shadowStyle} ${hoverShadow} transition-all`}
+                    className={`w-full flex items-center gap-3 p-4 text-sm font-medium text-text-dim hover:bg-danger-50 hover:text-danger-600 rounded-pill transition-colors ${isCollapsed && !mobile ? 'justify-center' : ''}`}
+                    title="Logout"
                 >
                     <LogOut size={20} />
-                    {(!isCollapsed || mobile) && <span>Logout</span>}
+                    {(!isCollapsed || mobile) && <span>Log out</span>}
                 </button>
             </div>
         </div>
@@ -137,21 +110,21 @@ const Sidebar = ({
 
     return (
         <>
-            {/* Desktop Sidebar (Fixed) */}
-            <div className={`hidden md:block fixed left-0 top-0 h-screen transition-all duration-300 z-40 ${isCollapsed ? 'w-20' : 'w-72'}`}>
+            {/* Desktop Sidebar (Floating) */}
+            <div className={`hidden md:block fixed left-4 top-4 bottom-4 z-40 transition-all duration-300 ${isCollapsed ? 'w-24' : 'w-72'}`}>
                 <SidebarContent mobile={false} />
             </div>
 
             {/* Mobile Overlay & Sidebar */}
-            <div className={`md:hidden fixed inset-0 z-50 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="w-72 h-full">
+            <div className={`md:hidden fixed inset-0 z-50 pointer-events-none transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="w-80 h-full bg-bg-main shadow-2xl pointer-events-auto">
                     <SidebarContent mobile={true} />
                 </div>
             </div>
             {/* Mobile Backdrop */}
             {isOpen && (
                 <div
-                    className="md:hidden fixed inset-0 bg-black/50 z-40"
+                    className="md:hidden fixed inset-0 bg-black/50 z-40 transition-opacity"
                     onClick={() => setIsOpen(false)}
                 />
             )}

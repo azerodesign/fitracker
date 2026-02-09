@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Key, Lock, AlertTriangle, Check, ExternalLink } from 'lucide-react';
-import BauhausButton from './BauhausButton';
+import Button from './Button';
 import { supabase } from '../utils/supabaseClient';
 
 const GmailConnectModal = ({ isOpen, onClose, userID }) => {
@@ -16,7 +16,6 @@ const GmailConnectModal = ({ isOpen, onClose, userID }) => {
         setLoading(true);
 
         try {
-            // Save initial credentials
             const { error } = await supabase
                 .from('integrations')
                 .upsert({
@@ -24,20 +23,13 @@ const GmailConnectModal = ({ isOpen, onClose, userID }) => {
                     provider: 'gmail',
                     client_id: credentials.clientId,
                     client_secret: credentials.clientSecret,
-                    is_active: false // Not active until token received
+                    is_active: false
                 }, { onConflict: 'user_id, provider' });
 
             if (error) throw error;
 
-            // Generate Auth URL
-            // We use standard Google OAuth URL construction
-            // Redirect URI must be: [Current Origin]/auth/callback ?? 
-            // OR simply a manual code copy-paste if redirect is hard to handle in SPA without backend?
-            // Let's try redirect to localhost for now (Development) or Current URL
-
-            const redirectUri = window.location.origin; // e.g., http://localhost:5173
+            const redirectUri = window.location.origin;
             const scope = 'https://www.googleapis.com/auth/gmail.readonly';
-
             const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${credentials.clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
 
             setAuthUrl(url);
@@ -51,35 +43,41 @@ const GmailConnectModal = ({ isOpen, onClose, userID }) => {
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-secondary-900/40 backdrop-blur-sm">
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
-                        className="bg-white w-full max-w-lg border-4 border-black shadow-[8px_8px_0px_0px_#4285F4] relative flex flex-col"
+                        className="bg-surface w-full max-w-lg rounded-3xl shadow-soft relative flex flex-col overflow-hidden border border-border"
                     >
-                        <div className="bg-[#4285F4] p-4 flex justify-between items-center border-b-4 border-black text-white">
-                            <h2 className="text-xl font-black uppercase flex items-center gap-2">
-                                <Key className="text-white" /> Connect Gmail
+                        {/* Header */}
+                        <div className="bg-surface p-6 flex justify-between items-center border-b border-border">
+                            <h2 className="text-xl font-bold flex items-center gap-3 text-text-main">
+                                <div className="p-2 bg-primary-50 dark:bg-primary-900/30 rounded-xl text-primary-600 dark:text-primary-400">
+                                    <Key size={24} />
+                                </div>
+                                Connect Gmail
                             </h2>
-                            <button onClick={onClose}><X size={24} /></button>
+                            <button onClick={onClose} className="text-text-muted hover:text-text-main hover:bg-surface-hover p-2 rounded-full transition-colors"><X size={24} /></button>
                         </div>
 
-                        <div className="p-6 bg-[#F1FAEE]">
+                        <div className="p-6">
                             {step === 1 ? (
-                                <form onSubmit={handleGenerateLink} className="space-y-4">
-                                    <div className="bg-yellow-100 border-2 border-yellow-500 p-3 text-xs font-mono mb-4 text-yellow-800">
-                                        <AlertTriangle size={16} className="inline mr-1 mb-1" />
-                                        <strong>Private Server Mode:</strong> You must provide your own Google Cloud credentials.
-                                        Ensure Redirect URI <u>{window.location.origin}</u> is added in Google Console.
+                                <form onSubmit={handleGenerateLink} className="space-y-6">
+                                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30 p-5 rounded-2xl text-xs text-amber-900 dark:text-amber-200">
+                                        <div className="flex items-center gap-2 mb-2 font-bold text-amber-700 dark:text-amber-300 text-sm">
+                                            <AlertTriangle size={18} /> Private Cloud Mode
+                                        </div>
+                                        <p className="leading-relaxed">You must provide your own Google Cloud credentials.</p>
+                                        <p className="mt-2 text-amber-800/80 dark:text-amber-300/80">Add redirect URI: <code className="bg-amber-100 dark:bg-amber-900/40 px-2 py-1 rounded-md text-amber-900 dark:text-amber-100 font-mono font-bold">{window.location.origin}</code></p>
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-bold uppercase mb-1">Client ID</label>
+                                        <label className="block text-xs font-bold uppercase text-text-muted mb-2 ml-1">Client ID</label>
                                         <input
                                             type="text"
-                                            className="w-full border-2 border-black p-2 font-mono text-xs focus:ring-2 focus:ring-[#4285F4]"
+                                            className="w-full bg-app-bg border-transparent rounded-full p-4 font-mono text-xs focus:ring-2 focus:ring-primary-500 focus:bg-surface outline-none transition-all shadow-inner font-bold text-text-main"
                                             value={credentials.clientId}
                                             onChange={e => setCredentials({ ...credentials, clientId: e.target.value })}
                                             placeholder="xxx.apps.googleusercontent.com"
@@ -87,42 +85,45 @@ const GmailConnectModal = ({ isOpen, onClose, userID }) => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold uppercase mb-1">Client Secret</label>
+                                        <label className="block text-xs font-bold uppercase text-text-muted mb-2 ml-1">Client Secret</label>
                                         <div className="relative">
                                             <input
                                                 type="password"
-                                                className="w-full border-2 border-black p-2 font-mono text-xs focus:ring-2 focus:ring-[#4285F4]"
+                                                className="w-full bg-app-bg border-transparent rounded-full p-4 font-mono text-xs focus:ring-2 focus:ring-primary-500 focus:bg-surface outline-none transition-all shadow-inner font-bold text-text-main"
                                                 value={credentials.clientSecret}
                                                 onChange={e => setCredentials({ ...credentials, clientSecret: e.target.value })}
                                                 required
                                             />
-                                            <Lock size={14} className="absolute right-3 top-3 text-gray-400" />
+                                            <Lock size={16} className="absolute right-4 top-4 text-text-muted" />
                                         </div>
                                     </div>
 
-                                    <BauhausButton disabled={loading} type="submit" className="w-full flex justify-center mt-4">
-                                        {loading ? "Saving..." : "Save & Generate Link"}
-                                    </BauhausButton>
+                                    <div className="pt-2">
+                                        <Button disabled={loading} type="submit" className="w-full rounded-full shadow-soft-hover h-12 font-bold text-base">
+                                            {loading ? "Saving..." : "Save & Generate Link"}
+                                        </Button>
+                                    </div>
                                 </form>
                             ) : (
-                                <div className="text-center space-y-4">
-                                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto border-2 border-green-500">
-                                        <Check size={32} className="text-green-600" />
+                                <div className="text-center space-y-8 py-4">
+                                    <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto border-8 border-emerald-50 dark:border-emerald-900/10 text-emerald-600 dark:text-emerald-400 shadow-soft">
+                                        <Check size={40} />
                                     </div>
-                                    <h3 className="font-bold text-lg">Keys Saved!</h3>
-                                    <p className="text-sm text-gray-600">Click below to authorize fitracker to access your Gmail.</p>
+                                    <div>
+                                        <h3 className="font-bold text-2xl text-text-main mb-2">Keys Saved!</h3>
+                                        <p className="text-text-muted">Authorize Fitracker to read your transaction emails.</p>
+                                    </div>
 
                                     <a
                                         href={authUrl}
-                                        className="block w-full bg-[#4285F4] text-white font-bold py-3 border-2 border-black shadow-[4px_4px_0px_0px_#000] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#000] transition-all flex items-center justify-center gap-2"
+                                        className="block w-full bg-primary-600 text-white font-bold py-4 rounded-full shadow-soft-hover hover:bg-primary-700 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-3"
                                     >
-                                        <ExternalLink size={18} /> Authorize with Google
+                                        <ExternalLink size={20} /> Authorize with Google
                                     </a>
 
-                                    <p className="text-[10px] text-gray-400 mt-4">
-                                        You will be redirected back here after login.
-                                        Check URL for ?code=...
-                                    </p>
+                                    <div className="text-xs text-text-muted bg-app-bg p-3 rounded-xl inline-block">
+                                        Redirects to: <span className="font-mono font-bold text-text-main">{window.location.origin}</span>
+                                    </div>
                                 </div>
                             )}
                         </div>

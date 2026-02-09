@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Save, Target, AlertTriangle } from 'lucide-react';
-import BauhausButton from './BauhausButton';
+import { X, Save, Target } from 'lucide-react';
+import Button from './Button';
 import { supabase } from '../utils/supabaseClient';
-import { COLORS } from '../constants';
 
 const BudgetManager = ({ isOpen, onClose, userID, onBudgetsChange }) => {
     const [categories, setCategories] = useState([]);
     const [budgets, setBudgets] = useState({});
     const [loading, setLoading] = useState(false);
 
-    // Fetch categories and existing budgets when opening
     useEffect(() => {
         if (isOpen && userID) {
             fetchData();
@@ -19,7 +17,6 @@ const BudgetManager = ({ isOpen, onClose, userID, onBudgetsChange }) => {
 
     const fetchData = async () => {
         setLoading(true);
-        // 1. Fetch Expense Categories
         const { data: catData } = await supabase
             .from('categories')
             .select('*')
@@ -27,7 +24,6 @@ const BudgetManager = ({ isOpen, onClose, userID, onBudgetsChange }) => {
             .eq('type', 'Expense')
             .order('name');
 
-        // 2. Fetch Existing Budgets
         const { data: budData } = await supabase
             .from('budgets')
             .select('*')
@@ -35,7 +31,6 @@ const BudgetManager = ({ isOpen, onClose, userID, onBudgetsChange }) => {
 
         if (catData) setCategories(catData);
 
-        // Map budgets by category name
         const budgetMap = {};
         if (budData) {
             budData.forEach(b => {
@@ -50,26 +45,6 @@ const BudgetManager = ({ isOpen, onClose, userID, onBudgetsChange }) => {
         setBudgets(prev => ({ ...prev, [categoryName]: value }));
     };
 
-    const handleSave = async (categoryName) => {
-        const amount = budgets[categoryName];
-        if (!amount || amount < 0) return;
-
-        // Upsert logic (checking uniq constraint on user_id + category)
-        const { error } = await supabase
-            .from('budgets')
-            .upsert({
-                user_id: userID,
-                category: categoryName,
-                limit_amount: amount
-            }, { onConflict: 'user_id, category' });
-
-        if (!error) {
-            // Optional: visual feedback
-        } else {
-            alert("Failed to save budget: " + error.message);
-        }
-    };
-
     const handleSaveAll = async () => {
         setLoading(true);
         const updates = categories.map(cat => ({
@@ -78,8 +53,6 @@ const BudgetManager = ({ isOpen, onClose, userID, onBudgetsChange }) => {
             limit_amount: budgets[cat.name] || 0
         }));
 
-        // Filter out 0 or undefined if we want to clean up, but keeping 0 is fine for "no limit" or "0 limit"
-        // Actually, let's only upsert ones that have values. 
         const validUpdates = updates.filter(u => u.limit_amount !== undefined);
 
         const { error } = await supabase
@@ -98,57 +71,69 @@ const BudgetManager = ({ isOpen, onClose, userID, onBudgetsChange }) => {
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-secondary-900/40 backdrop-blur-sm">
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
-                        transition={{ duration: 0.2, ease: "easeOut" }}
-                        className="bg-white w-full max-w-md border-4 border-black shadow-[8px_8px_0px_0px_#E63946] relative flex flex-col max-h-[80vh]"
+                        transition={{ duration: 0.2 }}
+                        className="bg-surface w-full max-w-md rounded-3xl shadow-soft relative flex flex-col max-h-[85vh] border border-border"
                     >
                         {/* Header */}
-                        <div className="bg-[#1D3557] p-4 flex justify-between items-center border-b-4 border-black">
-                            <h2 className="text-xl font-black text-[#F1FAEE] uppercase tracking-wider flex items-center gap-2">
-                                <Target className="text-[#F9C74F]" /> Budget Limits
-                            </h2>
-                            <button onClick={onClose} className="text-white hover:text-[#F9C74F] transition-colors">
-                                <X size={24} strokeWidth={3} />
+                        <div className="flex justify-between items-center p-6 border-b border-border">
+                            <h3 className="font-bold text-xl text-text-main flex items-center gap-3">
+                                <div className="p-2 bg-primary-50 dark:bg-primary-900/30 rounded-xl text-primary-600 dark:text-primary-400">
+                                    <Target size={24} />
+                                </div>
+                                Budget Limits
+                            </h3>
+                            <button onClick={onClose} className="p-2 text-text-muted hover:text-text-main hover:bg-surface-hover rounded-full transition-colors">
+                                <X size={24} />
                             </button>
                         </div>
 
                         {/* Content */}
-                        <div className="p-6 overflow-y-auto bg-[#F1FAEE]">
-                            <div className="space-y-4">
-                                {loading ? (
-                                    <div className="text-center font-mono animate-pulse">Loading budgets...</div>
-                                ) : (
-                                    categories.map(cat => (
-                                        <div key={cat.id} className="bg-white p-3 border-2 border-black shadow-sm flex items-center gap-3">
-                                            <div className="w-3 h-full self-stretch" style={{ backgroundColor: cat.color }}></div>
+                        <div className="p-0 overflow-y-auto scrollbar-hide">
+                            {loading ? (
+                                <div className="p-10 text-center">
+                                    <div className="animate-spin w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full mx-auto mb-4"></div>
+                                    <div className="animate-spin w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full mx-auto mb-4"></div>
+                                    <p className="text-text-muted text-sm font-medium">Loading budgets...</p>
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-border">
+                                    {categories.map(cat => (
+                                        <div key={cat.id} className="p-5 flex items-center gap-5 hover:bg-surface-hover transition-colors">
+                                            <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-white text-sm font-black shadow-soft shrink-0" style={{ backgroundColor: cat.color }}>
+                                                {cat.name.substring(0, 2).toUpperCase()}
+                                            </div>
                                             <div className="flex-1">
-                                                <div className="font-bold text-sm uppercase">{cat.name}</div>
-                                                <input
-                                                    type="number"
-                                                    placeholder="Set Limit (IDR)"
-                                                    className="w-full mt-1 p-1 border-b-2 border-gray-300 focus:border-[#E63946] focus:outline-none font-mono text-sm"
-                                                    value={budgets[cat.name] || ''}
-                                                    onChange={(e) => handleLimitChange(cat.name, e.target.value)}
-                                                />
+                                                <div className="font-bold text-base text-text-main mb-1">{cat.name}</div>
+                                                <div className="relative">
+                                                    <span className="absolute left-0 top-1/2 -translate-y-1/2 text-text-muted text-xs font-bold">Rp</span>
+                                                    <input
+                                                        type="number"
+                                                        placeholder="No Limit"
+                                                        className="w-full pl-6 bg-transparent border-none p-0 text-lg font-mono font-bold text-text-main focus:ring-0 placeholder:text-text-muted placeholder:font-normal placeholder:text-sm transition-all"
+                                                        value={budgets[cat.name] || ''}
+                                                        onChange={(e) => handleLimitChange(cat.name, e.target.value)}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
-                                    ))
-                                )}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {/* Footer */}
-                        <div className="p-4 border-t-4 border-black bg-white flex justify-end gap-2">
-                            <BauhausButton onClick={onClose} className="bg-white text-black text-xs">
+                        <div className="p-6 border-t border-border bg-app-bg rounded-b-3xl flex justify-end gap-3">
+                            <Button variant="ghost" onClick={onClose} size="md" className="rounded-full font-bold text-text-muted hover:text-text-main">
                                 Cancel
-                            </BauhausButton>
-                            <BauhausButton onClick={handleSaveAll} className="text-xs flex items-center gap-2">
-                                <Save size={14} /> Save Changes
-                            </BauhausButton>
+                            </Button>
+                            <Button onClick={handleSaveAll} size="md" icon={Save} className="rounded-full shadow-soft-hover font-bold">
+                                Save Changes
+                            </Button>
                         </div>
                     </motion.div>
                 </div>
